@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Track Workout - FitTracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">
+                <i data-feather="play-circle" class="me-2"></i>{{ plan.name }}
+            </h3>
+            <div class="workout-timer" id="workoutTimer">00:00:00</div>
+        </div>
+        
+        <div class="card-body">
+            <!-- Rest Timer (Hidden by default) -->
+            <div id="restTimer" class="alert alert-warning text-center mb-4" style="display: none;">
+                <h4 class="mb-2">Rest Time</h4>
+                <div class="rest-timer" id="restTimerDisplay">01:30</div>
+                <button class="btn btn-sm btn-primary" onclick="skipRest()">Skip Rest</button>
+            </div>
+            
+            <div id="exerciseContainer">
+                {% for exercise in plan.exercises %}
+                    <div class="exercise-block mb-4" data-exercise="{{ exercise.exercise_key }}">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    {{ app.storage.exercises[exercise.exercise_key].name }}
+                                </h5>
+                                <span class="badge bg-primary">
+                                    {{ exercise.sets }} sets × {{ exercise.reps }} reps
+                                    {% if exercise.weight > 0 %}@ {{ exercise.weight }}lbs{% endif %}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row g-2 mb-3">
+                                    <div class="col-2"><strong>Set</strong></div>
+                                    <div class="col-3"><strong>Target Reps</strong></div>
+                                    <div class="col-3"><strong>Actual Reps</strong></div>
+                                    <div class="col-2"><strong>Weight</strong></div>
+                                    <div class="col-2"><strong>Done</strong></div>
+                                </div>
+                                
+                                {% for i in range(exercise.sets) %}
+                                    <div class="row g-2 mb-2 align-items-center set-row" data-set="{{ loop.index0 }}">
+                                        <div class="col-2">
+                                            <span class="fw-bold">{{ loop.index }}</span>
+                                        </div>
+                                        <div class="col-3">
+                                            <span class="text-muted">{{ exercise.reps }}</span>
+                                        </div>
+                                        <div class="col-3">
+                                            <input type="number" class="form-control form-control-sm" 
+                                                   name="reps_completed[]" value="{{ exercise.reps }}" min="0">
+                                        </div>
+                                        <div class="col-2">
+                                            <input type="number" class="form-control form-control-sm" 
+                                                   name="weights_used[]" value="{{ exercise.weight }}" min="0" step="2.5">
+                                        </div>
+                                        <div class="col-2">
+                                            <input type="checkbox" class="form-check-input set-complete" name="sets_completed[]">
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                
+                                <div class="mt-3">
+                                    <button class="btn btn-success btn-sm complete-exercise" 
+                                            data-exercise="{{ exercise.exercise_key }}">
+                                        <i data-feather="check" class="me-1"></i>Complete Exercise
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="mt-4">
+                <form id="finishWorkoutForm" method="POST" action="{{ url_for('main_routes.finish_workout') }}">
+                    <input type="hidden" name="session_id" value="{{ session.id }}">
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Workout Notes (Optional)</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="How did the workout feel? Any observations?"></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('main_routes.dashboard') }}" class="btn btn-secondary">
+                            <i data-feather="arrow-left" class="me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-success flex-fill">
+                            <i data-feather="check-circle" class="me-1"></i>Finish Workout
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='workout.js') }}"></script>
+<script src="{{ url_for('static', filename='timer.js') }}"></script>
+<script>
+    // Initialize workout tracking
+    const sessionId = '{{ session.id }}';
+    const workoutTracker = new WorkoutTracker(sessionId);
+    const timer = new Timer();
+    
+    // Start workout timer
+    timer.startWorkoutTimer();
+    
+    // Handle set completion
+    document.querySelectorAll('.set-complete').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const setRow = this.closest('.set-row');
+            if (this.checked) {
+                setRow.classList.add('completed-set');
+                // Start rest timer
+                timer.startRestTimer(90); // 90 seconds default rest
+            } else {
+                setRow.classList.remove('completed-set');
+            }
+        });
+    });
+    
+    // Handle exercise completion
+    document.querySelectorAll('.complete-exercise').forEach(button => {
+        button.addEventListener('click', function() {
+            const exerciseKey = this.dataset.exercise;
+            const exerciseBlock = document.querySelector(`[data-exercise="${exerciseKey}"]`);
+            
+            workoutTracker.completeExercise(exerciseKey, exerciseBlock);
+            
+            // Mark exercise as completed
+            this.innerHTML = '<i data-feather="check-circle" class="me-1"></i>Completed';
+            this.classList.remove('btn-success');
+            this.classList.add('btn-outline-success');
+            this.disabled = true;
+            
+            feather.replace();
+        });
+    });
+</script>
+{% endblock %}

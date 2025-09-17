@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Create Workout Plan - FitTracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="mb-0">
+                        <i data-feather="plus-circle" class="me-2"></i>Create New Workout Plan
+                    </h3>
+                </div>
+                
+                <form method="POST" id="workoutPlanForm">
+                    <div class="card-body">
+                        <div class="mb-4">
+                            <label for="name" class="form-label">Plan Name *</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   placeholder="e.g., Upper Body Strength" required>
+                        </div>
+                        
+                        <h5 class="mb-3">Select Exercises</h5>
+                        <div class="row g-3">
+                            {% for key, exercise in exercises.items() %}
+                                <div class="col-lg-6">
+                                    <div class="card exercise-card">
+                                        <div class="card-body">
+                                            <div class="form-check mb-2">
+                                                <input class="form-check-input exercise-checkbox" type="checkbox" 
+                                                       id="exercise_{{ key }}" name="exercises" value="{{ key }}">
+                                                <label class="form-check-label fw-bold" for="exercise_{{ key }}">
+                                                    {{ exercise.name }}
+                                                </label>
+                                            </div>
+                                            
+                                            <p class="small text-muted mb-2">{{ exercise.description }}</p>
+                                            <div class="mb-2">
+                                                <span class="badge bg-secondary me-1">{{ exercise.equipment }}</span>
+                                                {% for muscle in exercise.muscle_groups %}
+                                                    <span class="badge bg-info me-1">{{ muscle }}</span>
+                                                {% endfor %}
+                                            </div>
+                                            
+                                            <div class="exercise-details" id="details_{{ key }}" style="display: none;">
+                                                <hr>
+                                                <div class="row g-2">
+                                                    <div class="col-4">
+                                                        <label class="form-label small">Sets</label>
+                                                        <input type="number" class="form-control form-control-sm" 
+                                                               name="sets_{{ key }}" value="3" min="1" max="10">
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <label class="form-label small">Reps</label>
+                                                        <input type="number" class="form-control form-control-sm" 
+                                                               name="reps_{{ key }}" value="10" min="1" max="50">
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <label class="form-label small">Weight (lbs)</label>
+                                                        <input type="number" class="form-control form-control-sm" 
+                                                               name="weight_{{ key }}" value="0" min="0" step="2.5">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer d-flex justify-content-between">
+                        <a href="{{ url_for('main_routes.dashboard') }}" class="btn btn-secondary">
+                            <i data-feather="arrow-left" class="me-1"></i>Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                            <i data-feather="save" class="me-1"></i>Create Plan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxes = document.querySelectorAll('.exercise-checkbox');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Handle exercise selection
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const exerciseKey = this.value;
+                const details = document.getElementById(`details_${exerciseKey}`);
+                
+                if (this.checked) {
+                    details.style.display = 'block';
+                } else {
+                    details.style.display = 'none';
+                }
+                
+                // Enable/disable submit button based on selections
+                const checkedBoxes = document.querySelectorAll('.exercise-checkbox:checked');
+                submitBtn.disabled = checkedBoxes.length === 0;
+            });
+        });
+        
+        // Form validation
+        document.getElementById('workoutPlanForm').addEventListener('submit', function(e) {
+            const checkedExercises = document.querySelectorAll('.exercise-checkbox:checked');
+            if (checkedExercises.length === 0) {
+                e.preventDefault();
+                alert('Please select at least one exercise for your workout plan.');
+            }
+        });
+    });
+</script>
+{% endblock %}

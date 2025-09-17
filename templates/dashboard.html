@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FitTracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">
+                <i data-feather="home" class="me-2"></i>
+                Welcome back, {{ current_user.username }}!
+            </h1>
+        </div>
+    </div>
+    
+    <!-- Stats Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="fitness-gradient rounded-circle d-flex align-items-center justify-content-center me-3"
+                             style="width: 50px; height: 50px;">
+                            <i data-feather="clipboard" class="text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">{{ stats.total_plans }}</h3>
+                            <p class="text-muted mb-0">Workout Plans</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-sm-6 col-xl-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="fitness-gradient rounded-circle d-flex align-items-center justify-content-center me-3"
+                             style="width: 50px; height: 50px;">
+                            <i data-feather="activity" class="text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">{{ stats.total_workouts }}</h3>
+                            <p class="text-muted mb-0">Total Workouts</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-sm-6 col-xl-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="fitness-gradient rounded-circle d-flex align-items-center justify-content-center me-3"
+                             style="width: 50px; height: 50px;">
+                            <i data-feather="calendar" class="text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">{{ stats.this_month }}</h3>
+                            <p class="text-muted mb-0">This Month</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-sm-6 col-xl-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="fitness-gradient rounded-circle d-flex align-items-center justify-content-center me-3"
+                             style="width: 50px; height: 50px;">
+                            <i data-feather="zap" class="text-white"></i>
+                        </div>
+                        <div>
+                            <h3 class="mb-0">{{ stats.streak }}</h3>
+                            <p class="text-muted mb-0">Day Streak</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-4">
+        <!-- Workout Plans -->
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i data-feather="clipboard" class="me-2"></i>Your Workout Plans
+                    </h5>
+                    <a href="{{ url_for('main_routes.create_plan') }}" class="btn btn-primary btn-sm">
+                        <i data-feather="plus" class="me-1"></i>New Plan
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if plans %}
+                        <div class="row g-3">
+                            {% for plan in plans %}
+                                <div class="col-md-6">
+                                    <div class="card exercise-card">
+                                        <div class="card-body">
+                                            <h6 class="card-title">{{ plan.name }}</h6>
+                                            <p class="card-text text-muted small">
+                                                {{ plan.exercises|length }} exercises
+                                            </p>
+                                            <div class="d-flex gap-2">
+                                                <a href="{{ url_for('main_routes.start_workout', plan_id=plan.id) }}" 
+                                                   class="btn btn-success btn-sm flex-fill">
+                                                    <i data-feather="play" class="me-1"></i>Start
+                                                </a>
+                                                <button class="btn btn-outline-secondary btn-sm">
+                                                    <i data-feather="edit"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i data-feather="clipboard" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+                            <p class="text-muted">No workout plans yet. Create your first plan to get started!</p>
+                            <a href="{{ url_for('main_routes.create_plan') }}" class="btn btn-primary">
+                                <i data-feather="plus" class="me-1"></i>Create Your First Plan
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i data-feather="clock" class="me-2"></i>Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_sessions %}
+                        {% for session in recent_sessions %}
+                            <div class="d-flex align-items-center mb-3 {% if not loop.last %}border-bottom pb-3{% endif %}">
+                                <div class="fitness-gradient rounded-circle d-flex align-items-center justify-content-center me-3"
+                                     style="width: 40px; height: 40px;">
+                                    <i data-feather="check" class="text-white" style="width: 20px; height: 20px;"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">Workout Completed</h6>
+                                    <small class="text-muted">
+                                        {{ session.end_time.strftime('%b %d, %Y') }}
+                                    </small>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <div class="text-center">
+                            <a href="{{ url_for('main_routes.progress') }}" class="btn btn-outline-primary btn-sm">
+                                View All Progress
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i data-feather="clock" class="text-muted mb-2" style="width: 32px; height: 32px;"></i>
+                            <p class="text-muted small">No recent activity. Start your first workout!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Dashboard specific JavaScript
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add any dashboard-specific functionality here
+        console.log('Dashboard loaded');
+    });
+</script>
+{% endblock %}

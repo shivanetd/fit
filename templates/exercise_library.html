@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Exercise Library - FitTracker{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h2">
+                <i data-feather="book" class="me-2"></i>Exercise Library
+            </h1>
+            <p class="text-muted">Discover exercises to add to your workout plans</p>
+        </div>
+    </div>
+    
+    <!-- Filter Controls -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">Search Exercises</label>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search by name...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Equipment</label>
+                    <select class="form-select" id="equipmentFilter">
+                        <option value="">All Equipment</option>
+                        <option value="Bodyweight">Bodyweight</option>
+                        <option value="Barbell">Barbell</option>
+                        <option value="Dumbbells">Dumbbells</option>
+                        <option value="Pull-up bar">Pull-up bar</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Muscle Group</label>
+                    <select class="form-select" id="muscleFilter">
+                        <option value="">All Muscles</option>
+                        <option value="Chest">Chest</option>
+                        <option value="Back">Back</option>
+                        <option value="Shoulders">Shoulders</option>
+                        <option value="Quadriceps">Quadriceps</option>
+                        <option value="Hamstrings">Hamstrings</option>
+                        <option value="Glutes">Glutes</option>
+                        <option value="Core">Core</option>
+                        <option value="Biceps">Biceps</option>
+                        <option value="Triceps">Triceps</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Exercise Grid -->
+    <div class="row g-4" id="exerciseGrid">
+        {% for key, exercise in exercises.items() %}
+            <div class="col-md-6 col-lg-4 exercise-item" 
+                 data-name="{{ exercise.name.lower() }}"
+                 data-equipment="{{ exercise.equipment }}"
+                 data-muscles="{{ exercise.muscle_groups|join(',') }}">
+                <div class="card exercise-card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ exercise.name }}</h5>
+                        <p class="card-text text-muted small mb-3">{{ exercise.description }}</p>
+                        
+                        <div class="mb-3">
+                            <span class="badge bg-secondary me-1">{{ exercise.equipment }}</span>
+                            {% for muscle in exercise.muscle_groups %}
+                                <span class="badge bg-info me-1">{{ muscle }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Exercise demonstration image -->
+                        {% set image_map = {
+                            'push_ups': 'https://pixabay.com/get/g55c22ee0a71fafb7a6b55a0b50939451e2e9ff8ec727cab41a221238b76c06085919949080cedc49f608fc61693b1acf95e9fa62b15a01ab83be1144e275a3dc_1280.jpg',
+                            'squats': 'https://pixabay.com/get/g92223f5a0f89fb1582295a76eaf51880c16d29fd3dcd8fa7b7e1f24f4a3759dd6d5cd990aa3d0a5bd36c93badcd04f936895d67f9d3c6115766b280abe3acf8d_1280.jpg',
+                            'deadlifts': 'https://pixabay.com/get/g40f440241a297af43597b81729b30759afa8f648227949bb35e6e96f9505827994fe81e524fbba0d24f9c7c39e2373d4847390e184d9e99c479b6feac77c8e4a_1280.jpg',
+                            'bench_press': 'https://pixabay.com/get/g3651d1390b1ddf7bb7ad68a859e8fa32630a58e7774c01d5f19697a80dd0ad491a2c0336e1815746f1309fa18afb2641379c1efceaf67a1acc7da08658cac341_1280.jpg',
+                            'pull_ups': 'https://pixabay.com/get/g9cb0c963e5c63f21feef472f4e2c22fcbad3bb916f37f54b629030bf5b8bfd685a19acf0d648d434fd81dd941bd5142c31da903767cd8b7b35e9dd1d3de6bb91_1280.jpg',
+                            'lunges': 'https://pixabay.com/get/g79e802144eb2d88d0230cab060d7b08e9d6451a441bf748e2b884e576a8694f61f907619e1e651d2170b6da810416f8976232c1fcbd11f78223be83931636e20_1280.jpg'
+                        } %}
+                        
+                        {% if key in image_map %}
+                            <img src="{{ image_map[key] }}" class="card-img-bottom mb-3" 
+                                 alt="{{ exercise.name }}" style="height: 150px; object-fit: cover;">
+                        {% endif %}
+                        
+                        <div class="d-grid">
+                            <button class="btn btn-outline-primary btn-sm" onclick="showExerciseDetails('{{ key }}')">
+                                <i data-feather="info" class="me-1"></i>View Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <!-- No Results Message -->
+    <div id="noResults" class="text-center py-5" style="display: none;">
+        <i data-feather="search" class="text-muted mb-3" style="width: 48px; height: 48px;"></i>
+        <h4 class="text-muted">No exercises found</h4>
+        <p class="text-muted">Try adjusting your search or filter criteria</p>
+    </div>
+</div>
+
+<!-- Exercise Detail Modal -->
+<div class="modal fade" id="exerciseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exerciseModalTitle">Exercise Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="exerciseModalBody">
+                <!-- Content will be populated by JavaScript -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="{{ url_for('main_routes.create_plan') }}" class="btn btn-primary">
+                    <i data-feather="plus" class="me-1"></i>Add to Workout Plan
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const exercises = {{ exercises | tojson }};
+    
+    // Search and filter functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const equipmentFilter = document.getElementById('equipmentFilter');
+        const muscleFilter = document.getElementById('muscleFilter');
+        const exerciseItems = document.querySelectorAll('.exercise-item');
+        const noResults = document.getElementById('noResults');
+        
+        function filterExercises() {
+            const searchTerm = searchInput.value.toLowerCase();
+            const equipmentValue = equipmentFilter.value;
+            const muscleValue = muscleFilter.value;
+            let visibleCount = 0;
+            
+            exerciseItems.forEach(item => {
+                const name = item.dataset.name;
+                const equipment = item.dataset.equipment;
+                const muscles = item.dataset.muscles;
+                
+                const matchesSearch = name.includes(searchTerm);
+                const matchesEquipment = !equipmentValue || equipment === equipmentValue;
+                const matchesMuscle = !muscleValue || muscles.includes(muscleValue);
+                
+                if (matchesSearch && matchesEquipment && matchesMuscle) {
+                    item.style.display = 'block';
+                    visibleCount++;
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+            
+            noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+        
+        searchInput.addEventListener('input', filterExercises);
+        equipmentFilter.addEventListener('change', filterExercises);
+        muscleFilter.addEventListener('change', filterExercises);
+    });
+    
+    // Show exercise details modal
+    function showExerciseDetails(exerciseKey) {
+        const exercise = exercises[exerciseKey];
+        const modal = new bootstrap.Modal(document.getElementById('exerciseModal'));
+        
+        document.getElementById('exerciseModalTitle').textContent = exercise.name;
+        document.getElementById('exerciseModalBody').innerHTML = `
+            <div class="mb-3">
+                <h6>Description</h6>
+                <p>${exercise.description}</p>
+            </div>
+            <div class="mb-3">
+                <h6>Equipment Needed</h6>
+                <span class="badge bg-secondary">${exercise.equipment}</span>
+            </div>
+            <div class="mb-3">
+                <h6>Primary Muscle Groups</h6>
+                ${exercise.muscle_groups.map(muscle => 
+                    `<span class="badge bg-info me-1">${muscle}</span>`
+                ).join('')}
+            </div>
+        `;
+        
+        modal.show();
+    }
+</script>
+{% endblock %}

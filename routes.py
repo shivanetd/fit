@@ -80,6 +80,8 @@ def exercise_library():
 @main_routes.route('/start_workout/<plan_id>')
 @login_required
 def start_workout(plan_id):
+    from models import EXERCISES
+    
     plan = WorkoutPlan.get(plan_id)
     
     if not plan or plan.user_id != current_user.id:
@@ -89,7 +91,7 @@ def start_workout(plan_id):
     session = WorkoutSession(plan_id=plan_id, user_id=current_user.id)
     session.save()
     
-    return render_template('track_workout.html', plan=plan, session=session)
+    return render_template('track_workout.html', plan=plan, session=session, exercises=EXERCISES)
 
 @main_routes.route('/complete_exercise', methods=['POST'])
 @login_required

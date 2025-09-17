@@ -10,7 +10,11 @@ from flask_session import Session
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SESSION_SECRET", "dev-secret-key")
+
+# Ensure SESSION_SECRET is set for security
+if not os.environ.get("SESSION_SECRET"):
+    raise ValueError("SESSION_SECRET environment variable must be set for security")
+app.secret_key = os.environ.get("SESSION_SECRET")
 
 # Enable CORS for PWA functionality
 CORS(app)

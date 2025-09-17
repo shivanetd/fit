@@ -88,13 +88,26 @@
         <!-- Workout Plans -->
         <div class="col-lg-8">
             <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">
-                        <i data-feather="clipboard" class="me-2"></i>Your Workout Plans
-                    </h5>
-                    <a href="{{ url_for('main_routes.create_plan') }}" class="btn btn-primary btn-sm">
-                        <i data-feather="plus" class="me-1"></i>New Plan
-                    </a>
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="mb-0">
+                            <i data-feather="clipboard" class="me-2"></i>Your Workout Plans
+                        </h5>
+                        <a href="{{ url_for('main_routes.create_plan') }}" class="btn btn-primary btn-sm">
+                            <i data-feather="plus" class="me-1"></i>New Plan
+                        </a>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <select class="form-select form-select-sm" id="levelFilter" onchange="filterByLevel()">
+                                <option value="">All Levels</option>
+                                <option value="beginner" {% if request.args.get('level') == 'beginner' %}selected{% endif %}>Beginner</option>
+                                <option value="intermediate" {% if request.args.get('level') == 'intermediate' %}selected{% endif %}>Intermediate</option>
+                                <option value="advanced" {% if request.args.get('level') == 'advanced' %}selected{% endif %}>Advanced</option>
+                                <option value="unspecified" {% if request.args.get('level') == 'unspecified' %}selected{% endif %}>Not Specified</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     {% if plans %}
@@ -103,7 +116,18 @@
                                 <div class="col-md-6">
                                     <div class="card exercise-card">
                                         <div class="card-body">
-                                            <h6 class="card-title">{{ plan.name }}</h6>
+                                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                                <h6 class="card-title mb-0">{{ plan.name }}</h6>
+                                                {% if plan.level == 'beginner' %}
+                                                    <span class="badge bg-success">Beginner</span>
+                                                {% elif plan.level == 'intermediate' %}
+                                                    <span class="badge bg-warning">Intermediate</span>
+                                                {% elif plan.level == 'advanced' %}
+                                                    <span class="badge bg-danger">Advanced</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Not Specified</span>
+                                                {% endif %}
+                                            </div>
                                             <p class="card-text text-muted small">
                                                 {{ plan.exercises|length }} exercises
                                             </p>
@@ -183,5 +207,21 @@
         // Add any dashboard-specific functionality here
         console.log('Dashboard loaded');
     });
+    
+    function filterByLevel() {
+        const levelFilter = document.getElementById('levelFilter');
+        const selectedLevel = levelFilter.value;
+        
+        // Update URL with level parameter
+        const currentUrl = new URL(window.location);
+        if (selectedLevel) {
+            currentUrl.searchParams.set('level', selectedLevel);
+        } else {
+            currentUrl.searchParams.delete('level');
+        }
+        
+        // Reload page with new filter
+        window.location.href = currentUrl.toString();
+    }
 </script>
 {% endblock %}

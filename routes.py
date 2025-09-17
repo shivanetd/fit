@@ -13,7 +13,8 @@ def index():
 @main_routes.route('/dashboard')
 @login_required
 def dashboard():
-    plans = WorkoutPlan.get_by_user(current_user.id)
+    level_filter = request.args.get('level')
+    plans = WorkoutPlan.get_by_user(current_user.id, level=level_filter)
     sessions = WorkoutSession.get_by_user(current_user.id)
     
     # Get recent sessions for stats

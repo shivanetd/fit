@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=mongodb://fittracker_user:${MONGO_PASSWORD}@mongo:27017/fittracker?authSource=fittracker
+      - MONGODB_URI=mongodb://fittracker_user:${MONGO_PASSWORD}@mongo:27017/fittracker?authSource=fittracker
+      - SESSION_SECRET=${SESSION_SECRET}
+      - FLASK_ENV=production
+    depends_on:
+      - mongo
+    restart: unless-stopped
+    networks:
+      - fittracker-network
+    env_file:
+      - .env
+
+  mongo:
+    image: mongo:7.0
+    # No port mapping for security - only accessible from app container
+    environment:
+      - MONGO_INITDB_DATABASE=fittracker
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD}
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    restart: unless-stopped
+    networks:
+      - fittracker-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  fittracker-network:
+    driver: bridge

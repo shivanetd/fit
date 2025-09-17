@@ -10,6 +10,11 @@ main_routes = Blueprint('main_routes', __name__)
 def index():
     return render_template('index.html')
 
+@main_routes.route('/health')
+def health():
+    """Health check endpoint for Docker containers"""
+    return jsonify({"status": "healthy", "timestamp": datetime.utcnow().isoformat()}), 200
+
 @main_routes.route('/dashboard')
 @login_required
 def dashboard():

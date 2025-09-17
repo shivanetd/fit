@@ -21,6 +21,17 @@
                                    placeholder="e.g., Upper Body Strength" required>
                         </div>
                         
+                        <div class="mb-4">
+                            <label for="level" class="form-label">Fitness Level</label>
+                            <select class="form-select" id="level" name="level">
+                                <option value="unspecified" {% if current_user.fitness_level == 'unspecified' or not current_user.fitness_level %}selected{% endif %}>Not Specified</option>
+                                <option value="beginner" {% if current_user.fitness_level == 'beginner' %}selected{% endif %}>Beginner</option>
+                                <option value="intermediate" {% if current_user.fitness_level == 'intermediate' %}selected{% endif %}>Intermediate</option>
+                                <option value="advanced" {% if current_user.fitness_level == 'advanced' %}selected{% endif %}>Advanced</option>
+                            </select>
+                            <div class="form-text">Choose the fitness level that matches this workout plan's difficulty.</div>
+                        </div>
+                        
                         <h5 class="mb-3">Select Exercises</h5>
                         <div class="row g-3">
                             {% for key, exercise in exercises.items() %}

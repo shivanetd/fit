@@ -35,6 +35,12 @@ def create_plan():
     if request.method == 'POST':
         name = request.form.get('name')
         selected_exercises = request.form.getlist('exercises')
+        level = request.form.get('level', current_user.fitness_level if hasattr(current_user, 'fitness_level') else 'unspecified')
+        
+        # Validate level
+        valid_levels = ['beginner', 'intermediate', 'advanced', 'unspecified']
+        if level not in valid_levels:
+            level = 'unspecified'
         
         if not name:
             flash("Workout plan name is required.", "error")
@@ -53,7 +59,7 @@ def create_plan():
                 'weight': weight
             })
         
-        plan = WorkoutPlan(name=name, user_id=current_user.id, exercises=exercises)
+        plan = WorkoutPlan(name=name, user_id=current_user.id, exercises=exercises, level=level)
         plan.save()
         
         flash(f"Workout plan '{name}' created successfully!", "success")

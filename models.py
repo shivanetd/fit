@@ -1,7 +1,13 @@
-from app import db
+import os
 from flask_login import UserMixin
+from pymongo import MongoClient
 from datetime import datetime
 import uuid
+from bson.objectid import ObjectId
+
+# MongoDB connection
+client = MongoClient(os.environ.get("MONGODB_URI"))
+db = client.fittracker
 
 # Exercise library data
 EXERCISE_LIBRARY = {
@@ -55,89 +61,142 @@ EXERCISE_LIBRARY = {
     }
 }
 
-class User(UserMixin, db.Model):
-    __tablename__ = 'users'
-    
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    username = db.Column(db.String(64), nullable=False)
-    google_id = db.Column(db.String(100), unique=True, nullable=True)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
-    # Relationships
-    workout_plans = db.relationship('WorkoutPlan', backref='owner', lazy=True, cascade='all, delete-orphan')
-    workout_sessions = db.relationship('WorkoutSession', backref='user', lazy=True, cascade='all, delete-orphan')
-    
-    def __init__(self, email, username, google_id=None):
+class User(UserMixin):
+    def __init__(self, email, username, google_id=None, user_id=None, created_at=None):
+        self.id = user_id or str(uuid.uuid4())
         self.email = email
         self.username = username
         self.google_id = google_id
+        self.created_at = created_at or datetime.utcnow()
         
     @staticmethod
     def get(user_id):
-        return User.query.get(user_id)
+        user_data = db.users.find_one({"_id": user_id})
+        if user_data:
+            return User(
+                email=user_data['email'],
+                username=user_data['username'],
+                google_id=user_data.get('google_id'),
+                user_id=user_data['_id'],
+                created_at=user_data.get('created_at')
+            )
+        return None
     
     @staticmethod
     def get_by_email(email):
-        return User.query.filter_by(email=email).first()
+        user_data = db.users.find_one({"email": email})
+        if user_data:
+            return User(
+                email=user_data['email'],
+                username=user_data['username'],
+                google_id=user_data.get('google_id'),
+                user_id=user_data['_id'],
+                created_at=user_data.get('created_at')
+            )
+        return None
     
     @staticmethod
     def get_by_google_id(google_id):
-        return User.query.filter_by(google_id=google_id).first()
+        user_data = db.users.find_one({"google_id": google_id})
+        if user_data:
+            return User(
+                email=user_data['email'],
+                username=user_data['username'],
+                google_id=user_data.get('google_id'),
+                user_id=user_data['_id'],
+                created_at=user_data.get('created_at')
+            )
+        return None
     
     def save(self):
-        db.session.add(self)
-        db.session.commit()
+        user_doc = {
+            "_id": self.id,
+            "email": self.email,
+            "username": self.username,
+            "google_id": self.google_id,
+            "created_at": self.created_at
+        }
+        db.users.update_one(
+            {"_id": self.id},
+            {"$set": user_doc},
+            upsert=True
+        )
         return self
 
-class WorkoutPlan(db.Model):
-    __tablename__ = 'workout_plans'
-    
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    name = db.Column(db.String(100), nullable=False)
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    exercises = db.Column(db.JSON, nullable=False, default=list)
-    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    
-    # Relationships
-    workout_sessions = db.relationship('WorkoutSession', backref='plan', lazy=True)
-    
-    def __init__(self, name, user_id, exercises=None):
+class WorkoutPlan:
+    def __init__(self, name, user_id, exercises=None, plan_id=None, created_at=None):
+        self.id = plan_id or str(uuid.uuid4())
         self.name = name
         self.user_id = user_id
         self.exercises = exercises or []
+        self.created_at = created_at or datetime.utcnow()
     
     def save(self):
-        db.session.add(self)
-        db.session.commit()
+        plan_doc = {
+            "_id": self.id,
+            "name": self.name,
+            "user_id": self.user_id,
+            "exercises": self.exercises,
+            "created_at": self.created_at
+        }
+        db.workout_plans.update_one(
+            {"_id": self.id},
+            {"$set": plan_doc},
+            upsert=True
+        )
         return self
     
     @staticmethod
     def get_by_user(user_id):
-        return WorkoutPlan.query.filter_by(user_id=user_id).all()
+        plans = []
+        for plan_data in db.workout_plans.find({"user_id": user_id}):
+            plans.append(WorkoutPlan(
+                name=plan_data['name'],
+                user_id=plan_data['user_id'],
+                exercises=plan_data.get('exercises', []),
+                plan_id=plan_data['_id'],
+                created_at=plan_data.get('created_at')
+            ))
+        return plans
     
     @staticmethod
     def get(plan_id):
-        return WorkoutPlan.query.get(plan_id)
+        plan_data = db.workout_plans.find_one({"_id": plan_id})
+        if plan_data:
+            return WorkoutPlan(
+                name=plan_data['name'],
+                user_id=plan_data['user_id'],
+                exercises=plan_data.get('exercises', []),
+                plan_id=plan_data['_id'],
+                created_at=plan_data.get('created_at')
+            )
+        return None
 
-class WorkoutSession(db.Model):
-    __tablename__ = 'workout_sessions'
-    
-    id = db.Column(db.String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    plan_id = db.Column(db.String(36), db.ForeignKey('workout_plans.id'), nullable=False)
-    user_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
-    start_time = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
-    end_time = db.Column(db.DateTime, nullable=True)
-    exercises_completed = db.Column(db.JSON, nullable=False, default=list)
-    notes = db.Column(db.Text, nullable=True, default="")
-    
-    def __init__(self, plan_id, user_id):
+class WorkoutSession:
+    def __init__(self, plan_id, user_id, session_id=None, start_time=None, end_time=None, exercises_completed=None, notes=""):
+        self.id = session_id or str(uuid.uuid4())
         self.plan_id = plan_id
         self.user_id = user_id
+        self.start_time = start_time or datetime.utcnow()
+        self.end_time = end_time
+        self.exercises_completed = exercises_completed or []
+        self.notes = notes
     
     def save(self):
-        db.session.add(self)
-        db.session.commit()
+        session_doc = {
+            "_id": self.id,
+            "plan_id": self.plan_id,
+            "user_id": self.user_id,
+            "start_time": self.start_time,
+            "end_time": self.end_time,
+            "exercises_completed": self.exercises_completed,
+            "notes": self.notes
+        }
+        db.workout_sessions.update_one(
+            {"_id": self.id},
+            {"$set": session_doc},
+            upsert=True
+        )
         return self
     
     def complete(self, notes=""):
@@ -147,8 +206,30 @@ class WorkoutSession(db.Model):
     
     @staticmethod
     def get_by_user(user_id):
-        return WorkoutSession.query.filter_by(user_id=user_id).order_by(WorkoutSession.start_time.desc()).all()
+        sessions = []
+        for session_data in db.workout_sessions.find({"user_id": user_id}).sort("start_time", -1):
+            sessions.append(WorkoutSession(
+                plan_id=session_data['plan_id'],
+                user_id=session_data['user_id'],
+                session_id=session_data['_id'],
+                start_time=session_data.get('start_time'),
+                end_time=session_data.get('end_time'),
+                exercises_completed=session_data.get('exercises_completed', []),
+                notes=session_data.get('notes', "")
+            ))
+        return sessions
     
     @staticmethod
     def get(session_id):
-        return WorkoutSession.query.get(session_id)
+        session_data = db.workout_sessions.find_one({"_id": session_id})
+        if session_data:
+            return WorkoutSession(
+                plan_id=session_data['plan_id'],
+                user_id=session_data['user_id'],
+                session_id=session_data['_id'],
+                start_time=session_data.get('start_time'),
+                end_time=session_data.get('end_time'),
+                exercises_completed=session_data.get('exercises_completed', []),
+                notes=session_data.get('notes', "")
+            )
+        return None

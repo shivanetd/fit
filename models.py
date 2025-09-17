@@ -79,7 +79,8 @@ class User(UserMixin):
                 username=user_data['username'],
                 google_id=user_data.get('google_id'),
                 user_id=user_data['_id'],
-                created_at=user_data.get('created_at')
+                created_at=user_data.get('created_at'),
+                fitness_level=user_data.get('fitness_level', 'unspecified')
             )
         return None
     
@@ -92,7 +93,8 @@ class User(UserMixin):
                 username=user_data['username'],
                 google_id=user_data.get('google_id'),
                 user_id=user_data['_id'],
-                created_at=user_data.get('created_at')
+                created_at=user_data.get('created_at'),
+                fitness_level=user_data.get('fitness_level', 'unspecified')
             )
         return None
     
@@ -105,7 +107,8 @@ class User(UserMixin):
                 username=user_data['username'],
                 google_id=user_data.get('google_id'),
                 user_id=user_data['_id'],
-                created_at=user_data.get('created_at')
+                created_at=user_data.get('created_at'),
+                fitness_level=user_data.get('fitness_level', 'unspecified')
             )
         return None
     
@@ -115,6 +118,7 @@ class User(UserMixin):
             "email": self.email,
             "username": self.username,
             "google_id": self.google_id,
+            "fitness_level": self.fitness_level,
             "created_at": self.created_at
         }
         db.users.update_one(

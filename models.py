@@ -124,11 +124,12 @@ class User(UserMixin):
         return self
 
 class WorkoutPlan:
-    def __init__(self, name, user_id, exercises=None, plan_id=None, created_at=None):
+    def __init__(self, name, user_id, exercises=None, level='unspecified', plan_id=None, created_at=None):
         self.id = plan_id or str(uuid.uuid4())
         self.name = name
         self.user_id = user_id
         self.exercises = exercises or []
+        self.level = level if level in ['beginner', 'intermediate', 'advanced', 'unspecified'] else 'unspecified'
         self.created_at = created_at or datetime.utcnow()
     
     def save(self):
@@ -137,6 +138,7 @@ class WorkoutPlan:
             "name": self.name,
             "user_id": self.user_id,
             "exercises": self.exercises,
+            "level": self.level,
             "created_at": self.created_at
         }
         db.workout_plans.update_one(
@@ -147,13 +149,18 @@ class WorkoutPlan:
         return self
     
     @staticmethod
-    def get_by_user(user_id):
+    def get_by_user(user_id, level=None):
+        query = {"user_id": user_id}
+        if level:
+            query["level"] = level
+        
         plans = []
-        for plan_data in db.workout_plans.find({"user_id": user_id}):
+        for plan_data in db.workout_plans.find(query).sort("created_at", -1):
             plans.append(WorkoutPlan(
                 name=plan_data['name'],
                 user_id=plan_data['user_id'],
                 exercises=plan_data.get('exercises', []),
+                level=plan_data.get('level', 'unspecified'),
                 plan_id=plan_data['_id'],
                 created_at=plan_data.get('created_at')
             ))
@@ -167,6 +174,7 @@ class WorkoutPlan:
                 name=plan_data['name'],
                 user_id=plan_data['user_id'],
                 exercises=plan_data.get('exercises', []),
+                level=plan_data.get('level', 'unspecified'),
                 plan_id=plan_data['_id'],
                 created_at=plan_data.get('created_at')
             )

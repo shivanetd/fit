@@ -59,22 +59,21 @@ def create_plan():
         flash(f"Workout plan '{name}' created successfully!", "success")
         return redirect(url_for('main_routes.dashboard'))
     
-    from app import app
-    exercises = app.storage['exercises']
+    from models import EXERCISE_LIBRARY
+    exercises = EXERCISE_LIBRARY
     return render_template('workout_plan.html', exercises=exercises)
 
 @main_routes.route('/exercise_library')
 @login_required
 def exercise_library():
-    from app import app
-    exercises = app.storage['exercises']
+    from models import EXERCISE_LIBRARY
+    exercises = EXERCISE_LIBRARY
     return render_template('exercise_library.html', exercises=exercises)
 
 @main_routes.route('/start_workout/<plan_id>')
 @login_required
 def start_workout(plan_id):
-    from app import app
-    plan = app.storage['workout_plans'].get(plan_id)
+    plan = WorkoutPlan.get(plan_id)
     
     if not plan or plan.user_id != current_user.id:
         flash("Workout plan not found.", "error")
@@ -94,8 +93,7 @@ def complete_exercise():
     reps_completed = request.form.getlist('reps_completed[]')
     weights_used = request.form.getlist('weights_used[]')
     
-    from app import app
-    session = app.storage['workout_sessions'].get(session_id)
+    session = WorkoutSession.get(session_id)
     
     if not session or session.user_id != current_user.id:
         return jsonify({'error': 'Session not found'}), 404
@@ -123,8 +121,7 @@ def finish_workout():
     session_id = request.form.get('session_id')
     notes = request.form.get('notes', '')
     
-    from app import app
-    session = app.storage['workout_sessions'].get(session_id)
+    session = WorkoutSession.get(session_id)
     
     if not session or session.user_id != current_user.id:
         flash("Workout session not found.", "error")

@@ -62,11 +62,12 @@ EXERCISE_LIBRARY = {
 }
 
 class User(UserMixin):
-    def __init__(self, email, username, google_id=None, user_id=None, created_at=None):
+    def __init__(self, email, username, google_id=None, user_id=None, created_at=None, fitness_level='unspecified'):
         self.id = user_id or str(uuid.uuid4())
         self.email = email
         self.username = username
         self.google_id = google_id
+        self.fitness_level = fitness_level if fitness_level in ['beginner', 'intermediate', 'advanced', 'unspecified'] else 'unspecified'
         self.created_at = created_at or datetime.utcnow()
         
     @staticmethod

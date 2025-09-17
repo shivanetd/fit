@@ -3,10 +3,15 @@
 
 db = db.getSiblingDB('fittracker');
 
+// Ensure MONGO_PASSWORD is set for security
+if (!process.env.MONGO_PASSWORD) {
+  throw new Error('MONGO_PASSWORD environment variable must be set for security');
+}
+
 // Create application user
 db.createUser({
   user: 'fittracker_user',
-  pwd: process.env.MONGO_PASSWORD || 'change_in_production',
+  pwd: process.env.MONGO_PASSWORD,
   roles: [
     {
       role: 'readWrite',
